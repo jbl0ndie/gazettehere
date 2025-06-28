@@ -5,10 +5,13 @@ class GazetteHere {
         this.currentMarker = null;
         this.chatHistory = [];
         this.locationContext = null;
+        this.config = window.AppConfig;
+        this.conversationHistory = []; // For OpenAI context
         
         this.initializeElements();
         this.attachEventListeners();
         this.initializeMap();
+        this.checkAIAvailability();
     }
 
     initializeElements() {
@@ -61,6 +64,15 @@ class GazetteHere {
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
             attribution: '© OpenStreetMap contributors'
         }).addTo(this.map);
+    }
+
+    checkAIAvailability() {
+        if (this.config.isOpenAIAvailable()) {
+            console.log('🤖 OpenAI integration available');
+        } else {
+            console.log('📝 Using simulated responses (OpenAI not available)');
+            // You could show a notice to users here if desired
+        }
     }
 
     showLoading() {
@@ -235,10 +247,15 @@ class GazetteHere {
         // Simulate AI response for prototype
         await this.simulateTyping();
         
-        const responses = this.getSimulatedResponses(locationName);
-        const randomResponse = responses[Math.floor(Math.random() * responses.length)];
-        
-        this.addChatMessage('assistant', randomResponse);
+        if (this.config.isOpenAIAvailable()) {
+            // Use OpenAI for dynamic responses
+            await this.generateAIResponse("Please provide an engaging introduction to this location, highlighting its most interesting features, history, or cultural significance.");
+        } else {
+            // Fallback to simulated responses
+            const responses = this.getSimulatedResponses(locationName);
+            const randomResponse = responses[Math.floor(Math.random() * responses.length)];
+            this.addChatMessage('assistant', randomResponse);
+        }
     }
 
     getSimulatedResponses(locationName) {
@@ -284,9 +301,80 @@ class GazetteHere {
     async handleChatResponse(userMessage) {
         await this.simulateTyping();
         
-        // Simulate AI response based on keywords
-        const response = this.generateContextualResponse(userMessage);
-        this.addChatMessage('assistant', response);
+        if (this.config.isOpenAIAvailable()) {
+            // Use OpenAI for dynamic responses
+            await this.generateAIResponse(userMessage);
+        } else {
+            // Fallback to simulated responses
+            const response = this.generateContextualResponse(userMessage);
+            this.addChatMessage('assistant', response);
+        }
+    }
+
+    async generateAIResponse(userMessage) {
+        try {
+            // Prepare conversation history
+            if (this.conversationHistory.length === 0) {
+                // Add system prompt on first message
+                this.conversationHistory.push({
+                    role: 'system',
+                    content: this.config.getSystemPrompt(this.locationContext)
+                });
+            }
+
+            // Add user message
+            this.conversationHistory.push({
+                role: 'user',
+                content: userMessage
+            });
+
+            // Make API call to our server
+            const response = await fetch(this.config.getOpenAIEndpoint(), {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    messages: this.conversationHistory,
+                    model: this.config.openai.model,
+                    maxTokens: this.config.openai.maxTokens,
+                    temperature: this.config.openai.temperature
+                })
+            });
+
+            if (!response.ok) {
+                const errorData = await response.json();
+                throw new Error(`API Error: ${errorData.error || 'Unknown error'}`);
+            }
+
+            const data = await response.json();
+            const aiResponse = data.choices[0].message.content;
+
+            // Add AI response to conversation history
+            this.conversationHistory.push({
+                role: 'assistant',
+                content: aiResponse
+            });
+
+            // Display the response
+            this.addChatMessage('assistant', aiResponse);
+
+        } catch (error) {
+            console.error('AI Response Error:', error);
+            
+            // Check for specific quota error
+            if (error.message.includes('quota') || error.message.includes('insufficient_quota')) {
+                this.addChatMessage('system', '💳 OpenAI quota exceeded. Using offline responses while you add billing at platform.openai.com/account/billing');
+            } else if (error.message.includes('invalid_api_key')) {
+                this.addChatMessage('system', '🔑 Invalid API key. Please check your .env file and restart the server.');
+            } else {
+                this.addChatMessage('system', 'Note: Using offline responses. Full AI features may be unavailable.');
+            }
+            
+            // Fallback to simulated response
+            const fallbackResponse = this.generateContextualResponse(userMessage);
+            this.addChatMessage('assistant', fallbackResponse);
+        }
     }
 
     generateContextualResponse(userMessage) {

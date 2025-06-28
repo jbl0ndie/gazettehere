@@ -19,11 +19,32 @@ A web app that answers "Where am I?" with rich geographical and contextual infor
 
 ## 🚀 Quick Start
 
+### Option 1: Static Version (No AI)
 1. Clone this repository
 2. Open `index.html` in your web browser
 3. Click "📍 Where Am I?" to get your current location
-4. Or manually enter a location in the search box
-5. Start chatting to learn about your area!
+4. Chat with simulated responses
+
+### Option 2: Full AI Integration
+1. Clone this repository
+2. Install dependencies: `npm install`
+3. Create environment file: `cp .env.example .env`
+4. Add your OpenAI API key to `.env`:
+   ```
+   OPENAI_API_KEY=your_actual_openai_api_key_here
+   ```
+5. Start the server: `npm start`
+6. Open `http://localhost:3000` in your browser
+7. Enjoy intelligent, context-aware responses!
+
+## 🔑 Getting OpenAI API Key
+
+1. Visit [OpenAI Platform](https://platform.openai.com/api-keys)
+2. Sign up or log in
+3. Create a new API key
+4. Copy it to your `.env` file
+
+**Cost**: GPT-3.5-turbo is very affordable (~$0.002 per 1K tokens)
 
 ## 🛠️ Technology Stack
 
@@ -40,6 +61,12 @@ gazettehere/
 ├── index.html          # Main HTML structure
 ├── style.css           # Styling and responsive design
 ├── script.js           # Core JavaScript functionality
+├── config.js           # API configuration and settings
+├── server.js           # Express server for AI integration
+├── package.json        # Node.js dependencies
+├── .env.example        # Environment variables template
+├── .env                # Your actual environment variables (ignored by git)
+├── .gitignore          # Git ignore patterns
 └── README.md           # Project documentation
 ```
 
@@ -52,16 +79,21 @@ The app combines the charm of old-fashioned gazetteers with modern web technolog
 - **Layout**: Clean, focused interface that doesn't distract from content
 - **Interactions**: Smooth animations and transitions for a polished feel
 
-## 🔮 Current Prototype Features
+## 🔮 Features
 
-This is a **prototype version** with simulated AI responses. The current implementation includes:
+### ✅ Current Features
+- **📍 Real geolocation and mapping** with Leaflet.js
+- **🔍 Location search** and reverse geocoding  
+- **🤖 AI-Powered Responses** with OpenAI integration
+- **💬 Intelligent chat interface** with conversation context
+- **📱 Responsive design** for all devices
+- **🎨 Beautiful animations** and polished UI
+- **🔒 Secure API handling** with environment variables
+- **🌐 Graceful fallbacks** when AI is unavailable
 
-- ✅ Real geolocation and mapping
-- ✅ Location search and reverse geocoding
-- ✅ Interactive chat interface
-- ✅ Keyword-based contextual responses
-- ✅ Responsive design
-- ✅ Beautiful animations and UI
+### 🎯 Dual Mode Operation
+- **Static Mode**: Works offline with simulated responses
+- **AI Mode**: Dynamic, intelligent responses using OpenAI GPT-3.5-turbo
 
 ## 🚧 Future Enhancements
 
@@ -83,6 +115,19 @@ This is a **prototype version** with simulated AI responses. The current impleme
 - [ ] Travel history and favorite locations
 - [ ] Personalized content recommendations
 - [ ] Route planning integration
+
+## 🔒 Security Features
+
+### API Key Protection
+- **Environment Variables**: API keys stored in `.env` file (not committed to git)
+- **Server-Side Proxy**: Browser never sees your OpenAI API key
+- **CORS Protection**: Configured for secure cross-origin requests
+- **Error Handling**: Graceful fallbacks when API is unavailable
+
+### Development vs Production
+- **Development**: Local Express server handles API calls
+- **Production**: Deploy to Vercel, Netlify, or similar with environment variables
+- **Static Fallback**: App works completely offline without server
 
 ## 💡 Implementation Notes
 

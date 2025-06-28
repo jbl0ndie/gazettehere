@@ -1,4 +1,4 @@
-# Environment variables and API keys
+# Environment variables and API keys (CRITICAL - NEVER COMMIT)
 .env
 .env.local
 .env.development
