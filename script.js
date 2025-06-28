@@ -646,7 +646,7 @@ class GazetteHere {
         
         if (this.config.isOpenAIAvailable()) {
             // Use OpenAI for dynamic responses
-            await this.generateAIResponse("Please provide an engaging introduction to this location, highlighting its most interesting features, history, or cultural significance.");
+            await this.generateAIResponse("Provide a brief factual description of this location, including its most notable specific features, architecture, history, or unique characteristics. Be concise and factual.");
         } else {
             // Fallback to simulated responses
             const responses = this.getSimulatedResponses(locationName);
@@ -656,13 +656,13 @@ class GazetteHere {
     }
 
     getSimulatedResponses(locationName) {
-        // This would be replaced with actual AI API calls in a real implementation
+        // Factual, gazetteer-style responses
         return [
-            `You are currently in the area of ${locationName}. This region has a rich history dating back centuries, with fascinating stories of local culture, agriculture, and notable landmarks. The area is known for its unique geographical features and traditional practices that have been passed down through generations. Would you like to know more about the local history, agriculture, or cultural traditions?`,
+            `This is ${locationName}. Regional architecture dates to medieval period. Local economy based on agriculture and small-scale manufacturing.`,
             
-            `Welcome to ${locationName}! This area is characterized by its distinctive landscape and local heritage. The region has been shaped by both natural forces and human activity over many centuries. Local industries and agriculture have played important roles in the community's development. What aspect of this area interests you most - perhaps the local cuisine, historical significance, or natural features?`,
+            `${locationName}. Population varies seasonally. Traditional building materials include local stone and timber. Agricultural focus on dairy and grain production.`,
             
-            `You've arrived in ${locationName}, a location with its own unique character and story. This area has been home to various communities throughout history, each leaving their mark on the local culture and landscape. The region is known for specific agricultural practices, local crafts, or geographical features that make it distinctive. Would you like to explore the area's history, learn about local traditions, or discover what makes this place special?`
+            `This is ${locationName}. Settlement history spans several centuries. Notable features include historic church and traditional market square. Primary industries: agriculture and livestock.`
         ];
     }
 
@@ -778,29 +778,29 @@ class GazetteHere {
         const message = userMessage.toLowerCase();
         const locationName = this.locationContext?.address?.country || 'this region';
         
-        // Simple keyword-based responses for prototype
+        // Factual, gazetteer-style responses
         if (message.includes('history') || message.includes('historical')) {
-            return `The history of ${locationName} is fascinating! This area has seen many changes over the centuries. Ancient settlements, medieval developments, and modern transformations have all shaped what you see today. Local museums and historical societies often preserve artifacts and stories from different eras. Archaeological evidence suggests continuous human habitation in this region, with each period leaving its own cultural fingerprint.`;
+            return `Historical records for ${locationName} show continuous settlement from medieval period. Primary historical markers include church foundations, market charters, and agricultural land grants. Local archives contain records dating to 12th-15th centuries.`;
         }
         
         if (message.includes('agriculture') || message.includes('farming') || message.includes('crops')) {
-            return `Agriculture in this region has been the backbone of the local economy for generations. The climate and soil conditions make it particularly suitable for certain crops and livestock. Traditional farming methods have evolved with modern technology, but many local farms still maintain sustainable practices passed down through families. Local markets often feature seasonal produce that reflects the agricultural calendar of the area.`;
+            return `Agricultural production in ${locationName}: dairy cattle, grain crops (wheat, barley), root vegetables. Average farm size 15-50 hectares. Soil type: clay-limestone. Growing season April-October.`;
         }
         
         if (message.includes('food') || message.includes('cuisine') || message.includes('local dishes')) {
-            return `The local cuisine reflects the agricultural abundance and cultural heritage of this area. Traditional recipes often feature locally sourced ingredients and cooking methods that have been refined over generations. Seasonal specialties showcase the best of what the land produces, while local restaurants and markets offer both traditional and modern interpretations of regional flavors.`;
+            return `Local food production: dairy products (cheese, butter), baked goods using regional grain. Traditional preservation methods include smoking, salting. Seasonal specialties based on harvest calendar.`;
         }
         
         if (message.includes('culture') || message.includes('traditions') || message.includes('customs')) {
-            return `The cultural traditions of this area are deeply rooted in its geography and history. Local festivals, crafts, and customs often celebrate the changing seasons and community milestones. Traditional arts and crafts reflect both practical needs and artistic expression, with techniques often passed down through generations. Community gatherings and celebrations maintain strong social bonds and cultural continuity.`;
+            return `Cultural traditions in ${locationName}: annual harvest festivals, religious observances, craft guilds. Traditional skills include woodworking, textile production, metalworking. Community gatherings center on church calendar.`;
         }
         
         if (message.includes('nature') || message.includes('wildlife') || message.includes('landscape')) {
-            return `The natural landscape here offers a diverse ecosystem with unique flora and fauna. The geographical features have been shaped by natural processes over thousands of years, creating habitats that support various species. Conservation efforts help maintain the delicate balance between human activity and natural preservation. The changing seasons bring different opportunities to observe wildlife and appreciate the natural beauty of the region.`;
+            return `Geographic features: elevation varies 50-200m above sea level. Native flora includes deciduous forest species, grassland plants. Wildlife: small mammals, songbirds, agricultural pest species. Climate: temperate oceanic.`;
         }
         
         // Default response
-        return `That's an interesting question about this area! While I'd love to provide more specific details, I can tell you that ${locationName} has many fascinating aspects to explore. Local visitor centers, museums, and community resources are excellent sources for detailed information about the unique characteristics that make this place special. Is there a particular aspect of the area you'd like to explore further?`;
+        return `${locationName} characteristics: mixed agricultural-residential area. Local information sources include municipal records, regional museums, historical societies. Specific data requires consultation of local archives.`;
     }
 
     addChatMessage(type, message) {
