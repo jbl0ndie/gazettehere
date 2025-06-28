@@ -1,0 +1,38 @@
+# Environment variables and API keys
+.env
+.env.local
+.env.development
+.env.test
+.env.production
+
+# API configuration files
+config/api-keys.js
+config/secrets.json
+
+# Node modules (if you add npm later)
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Build outputs
+dist/
+build/
+
+# IDE files
+.vscode/settings.json
+.idea/
+*.swp
+*.swo
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Logs
+logs
+*.log
+
+# Future deployment files that might contain secrets
+vercel.json
+netlify.toml

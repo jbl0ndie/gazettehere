@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GazetteHere - Where Am I?</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🗺️ GazetteHere</h1>
+            <p class="tagline">Your AI Travel Companion</p>
+        </header>
+
+        <main>
+            <!-- Location Section -->
+            <section class="location-section">
+                <div class="location-controls">
+                    <button id="getCurrentLocation" class="btn-primary">
+                        📍 Where Am I?
+                    </button>
+                    <div class="manual-location">
+                        <input type="text" id="manualLocation" placeholder="Or enter a location manually...">
+                        <button id="searchLocation" class="btn-secondary">Search</button>
+                    </div>
+                </div>
+                
+                <div id="locationInfo" class="location-info hidden">
+                    <h2 id="currentLocation"></h2>
+                    <p id="coordinates"></p>
+                </div>
+            </section>
+
+            <!-- Map Section -->
+            <section class="map-section">
+                <div id="map" class="map-container"></div>
+            </section>
+
+            <!-- Chat Section -->
+            <section class="chat-section">
+                <div id="chatContainer" class="chat-container">
+                    <div class="welcome-message">
+                        <h3>Welcome to GazetteHere! 🎒</h3>
+                        <p>Click "Where Am I?" to discover fascinating details about your current location, just like an old-fashioned gazetteer.</p>
+                    </div>
+                </div>
+                
+                <div class="chat-input-container">
+                    <input type="text" id="chatInput" placeholder="Ask me about this area..." disabled>
+                    <button id="sendChat" class="btn-chat" disabled>Send</button>
+                </div>
+            </section>
+
+            <!-- Loading Overlay -->
+            <div id="loadingOverlay" class="loading-overlay hidden">
+                <div class="loading-spinner"></div>
+                <p>Discovering your location...</p>
+            </div>
+        </main>
+
+        <footer>
+            <p>&copy; 2025 GazetteHere - Explore the world around you</p>
+        </footer>
+    </div>
+
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="script.js"></script>
+</body>
+</html>
