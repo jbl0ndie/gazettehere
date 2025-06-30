@@ -89,43 +89,11 @@ class GazetteHere {
         }).addTo(this.map);
     }
 
-    async checkAIAvailability() {
-        console.log('🔍 Checking AI availability...');
-        console.log('🌐 Window location:', window.location.href);
-        console.log('🏠 Hostname:', window.location.hostname);
-        console.log('🔧 isDevelopment:', this.config.isDevelopment);
-        console.log('🔗 OpenAI endpoint:', this.config.getOpenAIEndpoint());
-        console.log('✅ isOpenAIAvailable:', this.config.isOpenAIAvailable());
-        
+    checkAIAvailability() {
         if (this.config.isOpenAIAvailable()) {
             console.log('🤖 OpenAI integration available');
-            
-            // Test the endpoint
-            try {
-                const testResponse = await fetch(this.config.getOpenAIEndpoint(), {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({
-                        messages: [{ role: 'user', content: 'test connection' }],
-                        model: 'gpt-3.5-turbo',
-                        maxTokens: 10,
-                        temperature: 0.7
-                    })
-                });
-                
-                if (testResponse.ok) {
-                    console.log('✅ OpenAI endpoint test successful');
-                } else {
-                    console.log('❌ OpenAI endpoint test failed:', testResponse.status);
-                }
-            } catch (error) {
-                console.log('❌ OpenAI endpoint test error:', error);
-            }
         } else {
             console.log('📝 Using simulated responses (OpenAI not available)');
-            console.log('📍 Reason: endpoint is', this.config.getOpenAIEndpoint());
         }
     }
 
@@ -321,128 +289,6 @@ class GazetteHere {
         this.hideLoading();
         
         this.addChatMessage('system', `✅ Force update complete! New location: ${lat.toFixed(4)}, ${lng.toFixed(4)} (±${accuracy.toFixed(0)}m)`);
-    }
-
-    initializeMap() {
-        // Initialize map centered on world view
-        this.map = L.map('map').setView([48.8566, 2.3522], 2); // Paris as default center
-
-        // Add OpenStreetMap tiles
-        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-            attribution: '© OpenStreetMap contributors'
-        }).addTo(this.map);
-    }
-
-    showLoading() {
-        this.elements.loadingOverlay.classList.remove('hidden');
-    }
-
-    hideLoading() {
-        this.elements.loadingOverlay.classList.add('hidden');
-    }
-
-    async getCurrentLocation() {
-        if (!navigator.geolocation) {
-            this.addChatMessage('system', 'Geolocation is not supported by your browser.');
-            return;
-        }
-
-        this.showLoading();
-        
-        // Clear any existing watch to avoid interference
-        if (this.watchId) {
-            navigator.geolocation.clearWatch(this.watchId);
-        }
-
-        console.log('🔍 Requesting fresh location...');
-        
-        // Try multiple approaches to get fresh location
-        let attempts = 0;
-        const maxAttempts = 3;
-        
-        const tryGetLocation = () => {
-            attempts++;
-            console.log(`📍 Location attempt ${attempts}/${maxAttempts}`);
-            
-            navigator.geolocation.getCurrentPosition(
-                async (position) => {
-                    const lat = position.coords.latitude;
-                    const lng = position.coords.longitude;
-                    const accuracy = position.coords.accuracy;
-                    const timestamp = new Date(position.timestamp);
-                    
-                    console.log(`📍 Location received: ${lat.toFixed(6)}, ${lng.toFixed(6)}`);
-                    console.log(`⏰ Location timestamp: ${timestamp.toLocaleString()}`);
-                    console.log(`🎯 Accuracy: ±${accuracy}m`);
-                    
-                    // Check if this is the old cached location (49.0712, -0.6490)
-                    if (Math.abs(lat - 49.0712) < 0.001 && Math.abs(lng - (-0.6490)) < 0.001) {
-                        console.log('⚠️ Detected potentially cached location');
-                        
-                        // Check timestamp - if it's more than 30 seconds old, it's likely cached
-                        const ageSeconds = (Date.now() - position.timestamp) / 1000;
-                        console.log(`📅 Location age: ${ageSeconds.toFixed(1)} seconds`);
-                        
-                        if (ageSeconds > 30 && attempts < maxAttempts) {
-                            console.log('🔄 Retrying for fresh location...');
-                            setTimeout(tryGetLocation, 1000);
-                            return;
-                        }
-                    }
-                    
-                    // Check if this is significantly different from last location
-                    if (this.currentLocation) {
-                        const distance = this.calculateDistance(
-                            this.currentLocation.lat, 
-                            this.currentLocation.lng, 
-                            lat, 
-                            lng
-                        );
-                        console.log(`📏 Distance from last location: ${distance.toFixed(0)}m`);
-                        
-                        if (distance < 50) {
-                            this.hideLoading();
-                            this.addChatMessage('system', `📍 Still in the same area (${distance.toFixed(0)}m from last check). If you've moved, the GPS might need more time to update.`);
-                            return;
-                        }
-                    }
-                    
-                    await this.processLocation(lat, lng);
-                    this.hideLoading();
-                },
-                (error) => {
-                    console.error('Location error:', error);
-                    
-                    if (attempts < maxAttempts) {
-                        console.log('🔄 Retrying after error...');
-                        setTimeout(tryGetLocation, 2000);
-                        return;
-                    }
-                    
-                    this.hideLoading();
-                    let errorMessage = 'Unable to retrieve your location.';
-                    switch (error.code) {
-                        case error.PERMISSION_DENIED:
-                            errorMessage = 'Location access denied by user.';
-                            break;
-                        case error.POSITION_UNAVAILABLE:
-                            errorMessage = 'Location information is unavailable.';
-                            break;
-                        case error.TIMEOUT:
-                            errorMessage = 'Location request timed out.';
-                            break;
-                    }
-                    this.addChatMessage('system', errorMessage);
-                },
-                {
-                    enableHighAccuracy: true,
-                    timeout: 20000,
-                    maximumAge: 0  // Force fresh location, no cache
-                }
-            );
-        };
-        
-        tryGetLocation();
     }
 
     // Add continuous location tracking for travel mode
@@ -663,18 +509,13 @@ class GazetteHere {
     async generateInitialResponse() {
         const locationName = this.locationContext?.displayName || 'this location';
         
-        console.log('🎯 Generating initial response for:', locationName);
-        console.log('🔍 OpenAI available for initial:', this.config.isOpenAIAvailable());
-        
         // Simulate AI response for prototype
         await this.simulateTyping();
         
         if (this.config.isOpenAIAvailable()) {
-            console.log('🤖 Using OpenAI for initial response');
             // Use OpenAI for dynamic responses
             await this.generateAIResponse("Provide a brief factual description of this location, including its most notable specific features, architecture, history, or unique characteristics. Be concise and factual.");
         } else {
-            console.log('📝 Using fallback for initial response');
             // Fallback to simulated responses
             const responses = this.getSimulatedResponses(locationName);
             const randomResponse = responses[Math.floor(Math.random() * responses.length)];
@@ -725,15 +566,10 @@ class GazetteHere {
     async handleChatResponse(userMessage) {
         await this.simulateTyping();
         
-        console.log('💬 Handling chat response for:', userMessage);
-        console.log('🔍 OpenAI available check:', this.config.isOpenAIAvailable());
-        
         if (this.config.isOpenAIAvailable()) {
-            console.log('🤖 Using OpenAI for response');
             // Use OpenAI for dynamic responses
             await this.generateAIResponse(userMessage);
         } else {
-            console.log('📝 Using fallback response');
             // Fallback to simulated responses
             const response = this.generateContextualResponse(userMessage);
             this.addChatMessage('assistant', response);
@@ -741,9 +577,6 @@ class GazetteHere {
     }
 
     async generateAIResponse(userMessage) {
-        console.log('🤖 Starting generateAIResponse with message:', userMessage);
-        console.log('🔗 Using endpoint:', this.config.getOpenAIEndpoint());
-        
         try {
             // Prepare conversation history
             if (this.conversationHistory.length === 0) {
@@ -752,21 +585,12 @@ class GazetteHere {
                     role: 'system',
                     content: this.config.getSystemPrompt(this.locationContext)
                 });
-                console.log('📝 Added system prompt to conversation');
             }
 
             // Add user message
             this.conversationHistory.push({
                 role: 'user',
                 content: userMessage
-            });
-
-            console.log('📤 Making API call to OpenAI...');
-            console.log('📋 Request payload:', {
-                messages: this.conversationHistory,
-                model: this.config.openai.model,
-                maxTokens: this.config.openai.maxTokens,
-                temperature: this.config.openai.temperature
             });
 
             // Make API call to our server
@@ -783,16 +607,12 @@ class GazetteHere {
                 })
             });
 
-            console.log('📥 Response status:', response.status);
-
             if (!response.ok) {
                 const errorData = await response.json();
-                console.log('❌ Error response:', errorData);
                 throw new Error(`API Error: ${errorData.error || 'Unknown error'}`);
             }
 
             const data = await response.json();
-            console.log('✅ Success response:', data);
             const aiResponse = data.choices[0].message.content;
 
             // Add AI response to conversation history
@@ -802,7 +622,6 @@ class GazetteHere {
             });
 
             // Display the response
-            console.log('💬 Displaying AI response:', aiResponse);
             this.addChatMessage('assistant', aiResponse);
 
         } catch (error) {

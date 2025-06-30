@@ -4,20 +4,19 @@
 class Config {
     constructor() {
         // Check if we're in a development environment with a local server
-        this.isDevelopment = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
-        
-        console.log(`🔧 Config: hostname=${window.location.hostname}, isDevelopment=${this.isDevelopment}`);
+        // or on Vercel (which can run backend code)
+        this.isDevelopment = window.location.hostname === 'localhost' || 
+                           window.location.hostname === '127.0.0.1';
+        this.isVercel = window.location.hostname.includes('vercel.app');
         
         // API endpoints
         this.endpoints = {
-            // For development with local server
-            openai: this.isDevelopment ? '/api/openai' : null,
+            // For development with local server or Vercel deployment
+            openai: (this.isDevelopment || this.isVercel) ? '/api/openai' : null,
             
             // Public APIs (no auth required)
             nominatim: 'https://nominatim.openstreetmap.org'
         };
-        
-        console.log(`🔗 OpenAI endpoint: ${this.endpoints.openai}`);
         
         // OpenAI configuration
         this.openai = {
