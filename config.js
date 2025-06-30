@@ -6,6 +6,8 @@ class Config {
         // Check if we're in a development environment with a local server
         this.isDevelopment = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
         
+        console.log(`🔧 Config: hostname=${window.location.hostname}, isDevelopment=${this.isDevelopment}`);
+        
         // API endpoints
         this.endpoints = {
             // For development with local server
@@ -14,6 +16,8 @@ class Config {
             // Public APIs (no auth required)
             nominatim: 'https://nominatim.openstreetmap.org'
         };
+        
+        console.log(`🔗 OpenAI endpoint: ${this.endpoints.openai}`);
         
         // OpenAI configuration
         this.openai = {

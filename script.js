@@ -89,12 +89,43 @@ class GazetteHere {
         }).addTo(this.map);
     }
 
-    checkAIAvailability() {
+    async checkAIAvailability() {
+        console.log('🔍 Checking AI availability...');
+        console.log('🌐 Window location:', window.location.href);
+        console.log('🏠 Hostname:', window.location.hostname);
+        console.log('🔧 isDevelopment:', this.config.isDevelopment);
+        console.log('🔗 OpenAI endpoint:', this.config.getOpenAIEndpoint());
+        console.log('✅ isOpenAIAvailable:', this.config.isOpenAIAvailable());
+        
         if (this.config.isOpenAIAvailable()) {
             console.log('🤖 OpenAI integration available');
+            
+            // Test the endpoint
+            try {
+                const testResponse = await fetch(this.config.getOpenAIEndpoint(), {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        messages: [{ role: 'user', content: 'test connection' }],
+                        model: 'gpt-3.5-turbo',
+                        maxTokens: 10,
+                        temperature: 0.7
+                    })
+                });
+                
+                if (testResponse.ok) {
+                    console.log('✅ OpenAI endpoint test successful');
+                } else {
+                    console.log('❌ OpenAI endpoint test failed:', testResponse.status);
+                }
+            } catch (error) {
+                console.log('❌ OpenAI endpoint test error:', error);
+            }
         } else {
             console.log('📝 Using simulated responses (OpenAI not available)');
-            // You could show a notice to users here if desired
+            console.log('📍 Reason: endpoint is', this.config.getOpenAIEndpoint());
         }
     }
 
@@ -300,15 +331,6 @@ class GazetteHere {
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
             attribution: '© OpenStreetMap contributors'
         }).addTo(this.map);
-    }
-
-    checkAIAvailability() {
-        if (this.config.isOpenAIAvailable()) {
-            console.log('🤖 OpenAI integration available');
-        } else {
-            console.log('📝 Using simulated responses (OpenAI not available)');
-            // You could show a notice to users here if desired
-        }
     }
 
     showLoading() {
@@ -641,13 +663,18 @@ class GazetteHere {
     async generateInitialResponse() {
         const locationName = this.locationContext?.displayName || 'this location';
         
+        console.log('🎯 Generating initial response for:', locationName);
+        console.log('🔍 OpenAI available for initial:', this.config.isOpenAIAvailable());
+        
         // Simulate AI response for prototype
         await this.simulateTyping();
         
         if (this.config.isOpenAIAvailable()) {
+            console.log('🤖 Using OpenAI for initial response');
             // Use OpenAI for dynamic responses
             await this.generateAIResponse("Provide a brief factual description of this location, including its most notable specific features, architecture, history, or unique characteristics. Be concise and factual.");
         } else {
+            console.log('📝 Using fallback for initial response');
             // Fallback to simulated responses
             const responses = this.getSimulatedResponses(locationName);
             const randomResponse = responses[Math.floor(Math.random() * responses.length)];
@@ -698,10 +725,15 @@ class GazetteHere {
     async handleChatResponse(userMessage) {
         await this.simulateTyping();
         
+        console.log('💬 Handling chat response for:', userMessage);
+        console.log('🔍 OpenAI available check:', this.config.isOpenAIAvailable());
+        
         if (this.config.isOpenAIAvailable()) {
+            console.log('🤖 Using OpenAI for response');
             // Use OpenAI for dynamic responses
             await this.generateAIResponse(userMessage);
         } else {
+            console.log('📝 Using fallback response');
             // Fallback to simulated responses
             const response = this.generateContextualResponse(userMessage);
             this.addChatMessage('assistant', response);
@@ -709,6 +741,9 @@ class GazetteHere {
     }
 
     async generateAIResponse(userMessage) {
+        console.log('🤖 Starting generateAIResponse with message:', userMessage);
+        console.log('🔗 Using endpoint:', this.config.getOpenAIEndpoint());
+        
         try {
             // Prepare conversation history
             if (this.conversationHistory.length === 0) {
@@ -717,12 +752,21 @@ class GazetteHere {
                     role: 'system',
                     content: this.config.getSystemPrompt(this.locationContext)
                 });
+                console.log('📝 Added system prompt to conversation');
             }
 
             // Add user message
             this.conversationHistory.push({
                 role: 'user',
                 content: userMessage
+            });
+
+            console.log('📤 Making API call to OpenAI...');
+            console.log('📋 Request payload:', {
+                messages: this.conversationHistory,
+                model: this.config.openai.model,
+                maxTokens: this.config.openai.maxTokens,
+                temperature: this.config.openai.temperature
             });
 
             // Make API call to our server
@@ -739,12 +783,16 @@ class GazetteHere {
                 })
             });
 
+            console.log('📥 Response status:', response.status);
+
             if (!response.ok) {
                 const errorData = await response.json();
+                console.log('❌ Error response:', errorData);
                 throw new Error(`API Error: ${errorData.error || 'Unknown error'}`);
             }
 
             const data = await response.json();
+            console.log('✅ Success response:', data);
             const aiResponse = data.choices[0].message.content;
 
             // Add AI response to conversation history
@@ -754,6 +802,7 @@ class GazetteHere {
             });
 
             // Display the response
+            console.log('💬 Displaying AI response:', aiResponse);
             this.addChatMessage('assistant', aiResponse);
 
         } catch (error) {
