@@ -288,7 +288,15 @@ class GazetteHere {
         typingMessage.className = 'chat-message assistant typing';
         typingMessage.innerHTML = '<em>GazetteHere is thinking...</em>';
         this.elements.chatContainer.appendChild(typingMessage);
-        this.scrollToBottom();
+        
+        // Scroll to show the typing indicator
+        requestAnimationFrame(() => {
+            typingMessage.scrollIntoView({ 
+                behavior: 'smooth', 
+                block: 'start',
+                inline: 'nearest'
+            });
+        });
 
         // Wait for a moment
         await new Promise(resolve => setTimeout(resolve, 1500));
@@ -425,14 +433,20 @@ class GazetteHere {
         messageElement.textContent = message;
         
         this.elements.chatContainer.appendChild(messageElement);
-        this.scrollToBottom();
+        
+        // Use requestAnimationFrame to ensure the element is rendered before scrolling
+        // and scroll to show the start of the new message
+        requestAnimationFrame(() => {
+            // Scroll to show the start of the new message
+            messageElement.scrollIntoView({ 
+                behavior: 'smooth', 
+                block: 'start',
+                inline: 'nearest'
+            });
+        });
         
         // Store in chat history
         this.chatHistory.push({ type, message, timestamp: new Date() });
-    }
-
-    scrollToBottom() {
-        this.elements.chatContainer.scrollTop = this.elements.chatContainer.scrollHeight;
     }
 }
 
