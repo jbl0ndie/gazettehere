@@ -85,7 +85,7 @@ header h1 {
 }
 
 /* Buttons */
-.btn-primary, .btn-secondary, .btn-chat, .btn-travel, .btn-warning {
+.btn-primary, .btn-secondary, .btn-chat {
     padding: 12px 24px;
     border: none;
     border-radius: 8px;
@@ -130,43 +130,6 @@ header h1 {
 .btn-chat:disabled {
     background: #bdc3c7;
     cursor: not-allowed;
-}
-
-.btn-travel {
-    background: #e67e22;
-    color: white;
-    padding: 10px 20px;
-    border: none;
-    border-radius: 8px;
-    font-size: 1rem;
-    cursor: pointer;
-    transition: all 0.3s ease;
-    font-weight: 600;
-}
-
-.btn-travel:hover {
-    background: #d35400;
-}
-
-.btn-travel.btn-active {
-    background: #c0392b;
-    animation: pulse 2s infinite;
-}
-
-.btn-warning {
-    background: #f39c12;
-    color: white;
-    padding: 10px 20px;
-    border: none;
-    border-radius: 8px;
-    font-size: 1rem;
-    cursor: pointer;
-    transition: all 0.3s ease;
-    font-weight: 600;
-}
-
-.btn-warning:hover {
-    background: #e67e22;
 }
 
 /* Location Info */
@@ -324,12 +287,6 @@ header h1 {
 @keyframes fadeIn {
     from { opacity: 0; transform: translateY(10px); }
     to { opacity: 1; transform: translateY(0); }
-}
-
-@keyframes pulse {
-    0% { box-shadow: 0 0 0 0 rgba(192, 57, 43, 0.7); }
-    70% { box-shadow: 0 0 0 10px rgba(192, 57, 43, 0); }
-    100% { box-shadow: 0 0 0 0 rgba(192, 57, 43, 0); }
 }
 
 /* Footer */

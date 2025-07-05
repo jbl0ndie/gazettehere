@@ -17,9 +17,6 @@ class GazetteHere {
     initializeElements() {
         this.elements = {
             getCurrentLocationBtn: document.getElementById('getCurrentLocation'),
-            refreshLocationBtn: document.getElementById('refreshLocation'),
-            forceLocationBtn: document.getElementById('forceLocation'),
-            travelModeBtn: document.getElementById('travelMode'),
             manualLocationInput: document.getElementById('manualLocation'),
             searchLocationBtn: document.getElementById('searchLocation'),
             locationInfo: document.getElementById('locationInfo'),
@@ -36,26 +33,6 @@ class GazetteHere {
     attachEventListeners() {
         this.elements.getCurrentLocationBtn.addEventListener('click', () => {
             this.getCurrentLocation();
-        });
-
-        this.elements.refreshLocationBtn.addEventListener('click', () => {
-            this.getCurrentLocation();
-        });
-
-        this.elements.forceLocationBtn.addEventListener('click', () => {
-            this.forceLocationUpdate();
-        });
-
-        this.elements.travelModeBtn.addEventListener('click', () => {
-            if (this.watchId) {
-                this.stopLocationTracking();
-                this.elements.travelModeBtn.textContent = '🚗 Travel Mode';
-                this.elements.travelModeBtn.classList.remove('btn-active');
-            } else {
-                this.startLocationTracking();
-                this.elements.travelModeBtn.textContent = '⏹️ Stop Tracking';
-                this.elements.travelModeBtn.classList.add('btn-active');
-            }
         });
 
         this.elements.searchLocationBtn.addEventListener('click', () => {
@@ -113,253 +90,36 @@ class GazetteHere {
 
         this.showLoading();
         
-        // Clear any existing watch to avoid interference
-        if (this.watchId) {
-            navigator.geolocation.clearWatch(this.watchId);
-        }
-
-        console.log('🔍 Requesting fresh location...');
-        
-        // Try multiple approaches to get fresh location
-        let attempts = 0;
-        const maxAttempts = 3;
-        
-        const tryGetLocation = () => {
-            attempts++;
-            console.log(`📍 Location attempt ${attempts}/${maxAttempts}`);
-            
-            navigator.geolocation.getCurrentPosition(
-                async (position) => {
-                    const lat = position.coords.latitude;
-                    const lng = position.coords.longitude;
-                    const accuracy = position.coords.accuracy;
-                    const timestamp = new Date(position.timestamp);
-                    
-                    console.log(`📍 Location received: ${lat.toFixed(6)}, ${lng.toFixed(6)}`);
-                    console.log(`⏰ Location timestamp: ${timestamp.toLocaleString()}`);
-                    console.log(`🎯 Accuracy: ±${accuracy}m`);
-                    
-                    // Check if this is the old cached location (49.0712, -0.6490)
-                    if (Math.abs(lat - 49.0712) < 0.001 && Math.abs(lng - (-0.6490)) < 0.001) {
-                        console.log('⚠️ Detected potentially cached location');
-                        
-                        // Check timestamp - if it's more than 30 seconds old, it's likely cached
-                        const ageSeconds = (Date.now() - position.timestamp) / 1000;
-                        console.log(`📅 Location age: ${ageSeconds.toFixed(1)} seconds`);
-                        
-                        if (ageSeconds > 30 && attempts < maxAttempts) {
-                            console.log('🔄 Retrying for fresh location...');
-                            setTimeout(tryGetLocation, 1000);
-                            return;
-                        }
-                    }
-                    
-                    // Check if this is significantly different from last location
-                    if (this.currentLocation) {
-                        const distance = this.calculateDistance(
-                            this.currentLocation.lat, 
-                            this.currentLocation.lng, 
-                            lat, 
-                            lng
-                        );
-                        console.log(`📏 Distance from last location: ${distance.toFixed(0)}m`);
-                        
-                        if (distance < 50) {
-                            this.hideLoading();
-                            this.addChatMessage('system', `📍 Still in the same area (${distance.toFixed(0)}m from last check). If you've moved, the GPS might need more time to update.`);
-                            return;
-                        }
-                    }
-                    
-                    await this.processLocation(lat, lng);
-                    this.hideLoading();
-                },
-                (error) => {
-                    console.error('Location error:', error);
-                    
-                    if (attempts < maxAttempts) {
-                        console.log('🔄 Retrying after error...');
-                        setTimeout(tryGetLocation, 2000);
-                        return;
-                    }
-                    
-                    this.hideLoading();
-                    let errorMessage = 'Unable to retrieve your location.';
-                    switch (error.code) {
-                        case error.PERMISSION_DENIED:
-                            errorMessage = 'Location access denied by user.';
-                            break;
-                        case error.POSITION_UNAVAILABLE:
-                            errorMessage = 'Location information is unavailable.';
-                            break;
-                        case error.TIMEOUT:
-                            errorMessage = 'Location request timed out.';
-                            break;
-                    }
-                    this.addChatMessage('system', errorMessage);
-                },
-                {
-                    enableHighAccuracy: true,
-                    timeout: 20000,
-                    maximumAge: 0  // Force fresh location, no cache
-                }
-            );
-        };
-        
-        tryGetLocation();
-    }
-
-    // Force location update by ignoring cache and distance checks
-    async forceLocationUpdate() {
-        if (!navigator.geolocation) {
-            this.addChatMessage('system', 'Geolocation is not supported by your browser.');
-            return;
-        }
-
-        this.showLoading();
-        this.addChatMessage('system', '🚨 Forcing location update - ignoring all cached data...');
-
-        // Clear any existing watch
-        if (this.watchId) {
-            navigator.geolocation.clearWatch(this.watchId);
-        }
-
-        // Use watchPosition for a few seconds to get the most recent location
-        let bestPosition = null;
-        let watchCount = 0;
-        const maxWatches = 5;
-
-        const watchId = navigator.geolocation.watchPosition(
-            (position) => {
-                watchCount++;
-                const lat = position.coords.latitude;
-                const lng = position.coords.longitude;
-                const accuracy = position.coords.accuracy;
-                const timestamp = new Date(position.timestamp);
-                
-                console.log(`🎯 Watch update ${watchCount}: ${lat.toFixed(6)}, ${lng.toFixed(6)} (±${accuracy}m) at ${timestamp.toLocaleTimeString()}`);
-                
-                // Keep the most accurate position
-                if (!bestPosition || accuracy < bestPosition.coords.accuracy) {
-                    bestPosition = position;
-                    console.log('🏆 New best position found');
-                }
-                
-                // Stop after getting several positions or if we get very accurate data
-                if (watchCount >= maxWatches || accuracy < 10) {
-                    navigator.geolocation.clearWatch(watchId);
-                    this.processForcedLocation(bestPosition);
-                }
-            },
-            (error) => {
-                navigator.geolocation.clearWatch(watchId);
-                console.error('Force location error:', error);
-                this.hideLoading();
-                this.addChatMessage('system', '❌ Force location update failed. Try manual location search.');
-            },
-            {
-                enableHighAccuracy: true,
-                timeout: 5000,
-                maximumAge: 0
-            }
-        );
-
-        // Stop watching after 10 seconds regardless
-        setTimeout(() => {
-            navigator.geolocation.clearWatch(watchId);
-            if (bestPosition) {
-                this.processForcedLocation(bestPosition);
-            } else {
-                this.hideLoading();
-                this.addChatMessage('system', '⏰ Force location update timed out. Try manual location search.');
-            }
-        }, 10000);
-    }
-
-    async processForcedLocation(position) {
-        const lat = position.coords.latitude;
-        const lng = position.coords.longitude;
-        const accuracy = position.coords.accuracy;
-        
-        console.log(`🚨 Forced location: ${lat.toFixed(6)}, ${lng.toFixed(6)} (±${accuracy}m)`);
-        
-        // Force process regardless of distance
-        this.currentLocation = null; // Reset to force new location processing
-        await this.processLocation(lat, lng);
-        this.hideLoading();
-        
-        this.addChatMessage('system', `✅ Force update complete! New location: ${lat.toFixed(4)}, ${lng.toFixed(4)} (±${accuracy.toFixed(0)}m)`);
-    }
-
-    // Add continuous location tracking for travel mode
-    startLocationTracking() {
-        if (!navigator.geolocation) {
-            this.addChatMessage('system', 'Geolocation is not supported by your browser.');
-            return;
-        }
-
-        if (this.watchId) {
-            navigator.geolocation.clearWatch(this.watchId);
-        }
-
-        this.addChatMessage('system', '🚗 Travel mode enabled - tracking your location...');
-
-        this.watchId = navigator.geolocation.watchPosition(
+        navigator.geolocation.getCurrentPosition(
             async (position) => {
                 const lat = position.coords.latitude;
                 const lng = position.coords.longitude;
-                const accuracy = position.coords.accuracy;
                 
-                console.log(`🔄 Position update: ${lat.toFixed(6)}, ${lng.toFixed(6)} (±${accuracy}m)`);
-                
-                // Only process if significantly moved (>200m)
-                if (this.currentLocation) {
-                    const distance = this.calculateDistance(
-                        this.currentLocation.lat, 
-                        this.currentLocation.lng, 
-                        lat, 
-                        lng
-                    );
-                    
-                    if (distance > 200) {
-                        console.log(`📍 Significant movement detected: ${distance.toFixed(0)}m`);
-                        await this.processLocation(lat, lng);
-                    }
-                } else {
-                    await this.processLocation(lat, lng);
-                }
+                await this.processLocation(lat, lng);
+                this.hideLoading();
             },
             (error) => {
-                console.error('Location tracking error:', error);
-                this.addChatMessage('system', '❌ Location tracking stopped due to error.');
-                this.stopLocationTracking();
+                this.hideLoading();
+                let errorMessage = 'Unable to retrieve your location.';
+                switch (error.code) {
+                    case error.PERMISSION_DENIED:
+                        errorMessage = 'Location access denied by user.';
+                        break;
+                    case error.POSITION_UNAVAILABLE:
+                        errorMessage = 'Location information is unavailable.';
+                        break;
+                    case error.TIMEOUT:
+                        errorMessage = 'Location request timed out.';
+                        break;
+                }
+                this.addChatMessage('system', errorMessage);
             },
             {
                 enableHighAccuracy: true,
                 timeout: 15000,
-                maximumAge: 10000 // Allow 10 second old positions for tracking
+                maximumAge: 60000  // Allow 1 minute old location
             }
         );
-    }
-
-    stopLocationTracking() {
-        if (this.watchId) {
-            navigator.geolocation.clearWatch(this.watchId);
-            this.watchId = null;
-            this.addChatMessage('system', '⏹️ Location tracking stopped.');
-        }
-    }
-
-    // Calculate distance between two coordinates in meters
-    calculateDistance(lat1, lng1, lat2, lng2) {
-        const R = 6371000; // Earth's radius in meters
-        const dLat = (lat2 - lat1) * Math.PI / 180;
-        const dLng = (lng2 - lng1) * Math.PI / 180;
-        const a = Math.sin(dLat/2) * Math.sin(dLat/2) +
-                Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
-                Math.sin(dLng/2) * Math.sin(dLng/2);
-        const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
-        return R * c;
     }
 
     async searchLocation() {
@@ -391,9 +151,6 @@ class GazetteHere {
     }
 
     async processLocation(lat, lng) {
-        const isNewLocation = !this.currentLocation || 
-            this.calculateDistance(this.currentLocation.lat, this.currentLocation.lng, lat, lng) > 100;
-        
         this.currentLocation = { lat, lng };
         
         // Update map
@@ -402,24 +159,15 @@ class GazetteHere {
         // Get location information
         await this.getLocationInfo(lat, lng);
         
-        // Show refresh, force, and travel mode buttons after first location
-        this.elements.refreshLocationBtn.classList.remove('hidden');
-        this.elements.forceLocationBtn.classList.remove('hidden');
-        this.elements.travelModeBtn.classList.remove('hidden');
-        
         // Enable chat
         this.enableChat();
         
-        // If it's a significantly new location, clear chat and start fresh
-        if (isNewLocation) {
-            this.clearChatForNewLocation();
-            this.conversationHistory = []; // Reset AI conversation
-            
-            // Generate initial gazetteer response
-            await this.generateInitialResponse();
-        } else {
-            this.addChatMessage('system', '📍 Location updated, but you\'re still in the same general area.');
-        }
+        // Clear chat and start fresh
+        this.clearChatForNewLocation();
+        this.conversationHistory = []; // Reset AI conversation
+        
+        // Generate initial gazetteer response
+        await this.generateInitialResponse();
     }
 
     clearChatForNewLocation() {
